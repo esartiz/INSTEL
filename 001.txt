@@ -1,0 +1,18 @@
+CREATE TABLE assignments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user BIGINT(20) UNSIGNED NULL,
+    modulo BIGINT(20) UNSIGNED NULL,
+    grupo VARCHAR(145),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user) REFERENCES users(id),
+    FOREIGN KEY (modulo) REFERENCES modulos(id)
+);
+
+
+
+INSERT INTO assignments (user, modulo, grupo, estado) SELECT docente, id, '20231', '1' FROM modulos;
+INSERT INTO assignments (user, modulo, grupo, estado) SELECT docente, id, '20232', '1' FROM modulos;
+INSERT INTO assignments (user, modulo, grupo, estado) SELECT docente, id, '20233', '1' FROM modulos;
+INSERT INTO assignments (user, modulo, grupo, estado) SELECT docente, id, '20234', '0' FROM modulos;
+INSERT INTO assignments (user, modulo, grupo, estado) SELECT docente, id, '20241', '0' FROM modulos;

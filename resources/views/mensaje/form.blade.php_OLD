@@ -1,0 +1,39 @@
+<div class="box box-info padding-1">
+    <div class="box-body">
+        
+        <div class="form-group">
+            {{ Form::label('start_date') }}
+            {{ Form::text('start_date', $mensaje->start_date, ['class' => 'form-control' . ($errors->has('start_date') ? ' is-invalid' : ''), 'placeholder' => 'Start Date']) }}
+            {!! $errors->first('start_date', '<div class="invalid-feedback">:message</div>') !!}
+        </div>
+        <div class="form-group">
+            {{ Form::label('end_date') }}
+            {{ Form::text('end_date', $mensaje->end_date, ['class' => 'form-control' . ($errors->has('end_date') ? ' is-invalid' : ''), 'placeholder' => 'End Date']) }}
+            {!! $errors->first('end_date', '<div class="invalid-feedback">:message</div>') !!}
+        </div>
+        <div class="form-group">
+            {{ Form::label('de') }}
+            {{ Form::text('de', $mensaje->de, ['class' => 'form-control' . ($errors->has('de') ? ' is-invalid' : ''), 'placeholder' => 'De']) }}
+            {!! $errors->first('de', '<div class="invalid-feedback">:message</div>') !!}
+        </div>
+        <div class="form-group">
+            {{ Form::label('para') }}
+            {{ Form::text('para', $mensaje->para, ['class' => 'form-control' . ($errors->has('para') ? ' is-invalid' : ''), 'placeholder' => 'Para']) }}
+            {!! $errors->first('para', '<div class="invalid-feedback">:message</div>') !!}
+        </div>
+        <div class="form-group">
+            {{ Form::label('asunto') }}
+            {{ Form::text('asunto', $mensaje->asunto, ['class' => 'form-control' . ($errors->has('asunto') ? ' is-invalid' : ''), 'placeholder' => 'Asunto']) }}
+            {!! $errors->first('asunto', '<div class="invalid-feedback">:message</div>') !!}
+        </div>
+        <div class="form-group">
+            {{ Form::label('mensaje') }}
+            {{ Form::text('mensaje', $mensaje->mensaje, ['class' => 'form-control' . ($errors->has('mensaje') ? ' is-invalid' : ''), 'placeholder' => 'Mensaje']) }}
+            {!! $errors->first('mensaje', '<div class="invalid-feedback">:message</div>') !!}
+        </div>
+
+    </div>
+    <div class="box-footer mt20">
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </div>
+</div>

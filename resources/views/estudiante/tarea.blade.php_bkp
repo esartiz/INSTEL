@@ -1,0 +1,176 @@
+@extends('layouts.app')
+
+@section('content')
+@php
+$limiteFormateado = App\Http\Controllers\Estudiante::fechaEs($tarea->limite);
+@endphp
+<form method="POST" action="{{ route('entregar')}}" class="container" enctype="multipart/form-data">
+    @csrf
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex bd-highlight">
+                    <div class="p-2 bd-highlight">
+                        <h3>Entregar actividad</h3>
+                    </div>
+                    <div class="ms-auto p-2 bd-highlight">
+                        <a href="{{ route('estudiante.md', $tarea->modulo) }}" class="btn btn-outline-primary"><i class="fa-solid fa-circle-chevron-left"></i> Regresar</a><br><br>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body row d-flex align-items-center">
+                <div class="col-md-9 col-12 text-center p-3">
+                        {{ $tarea->enunciado }}
+                        <hr>
+                        @switch($tarea->tipo_rta)
+                            @case("audio")
+                                    <div class="mb-3">
+                                        <div class="btn btn-primary recMe" id="btRecN">Grabar Audio</div>
+                                        <br>
+                                        <input type="file" name="respuesta" id="archivoAudio" style="visibility: hidden">
+                                        <ul id="playlist"></ul>
+                                        <div id="botonEnviar"></div>
+                                    </div>
+                                    @break
+                                @case("pdf")
+                                    <div class="mb-3">
+                                      <label for="" class="form-label">Cargar Archivo en PDF</label>
+                                      <input type="file" class="form-control" name="respuesta" id="respuesta" placeholder="" accept="application/pdf" required>
+                                    </div>
+                                    @break
+                                @case("texto")
+                                    <textarea class="ckeditor" name="respuesta" id="respuesta" rows="13" required></textarea>
+                                    @break
+                                @case("link")
+                                    <div class="mb-3">
+                                      <label for="" class="form-label">Link</label>
+                                      <input type="text" class="form-control" name="respuesta" id="respuesta" aria-describedby="helpId" placeholder="" required>
+                                    </div>
+                                    @break
+                                @default
+
+                            @endswitch
+                            <small id="helpId" class="form-text text-muted"> 
+                                Esta actividad debes entregarla antes del {{ $limiteFormateado }}
+                              </small>
+                        </div>
+                        <div class="col-md-3 col-12 p-3">
+                            <div class="text-center" style="font-size: 30px; color:rgb(207, 108, 27)">
+                                <i class="fa-solid fa-lightbulb"></i>
+                                <h5>Tenga en Cuenta</h5>
+                            </div>
+                            @switch($tarea->tipo_rta)
+                                @case("audio")
+                                    En esta actividad debe enviar un audio. Asegúrese de dar los permisos necesarios en el navegador para
+                                    que se pueda capturar el audio y cargar el archivo para la entrega.
+                                    <hr>
+                                    Siga los siguientes pasos para realizar la grabación.<br>
+                                    1. Oprima el botón "Iniciar grabación".<br>
+                                    2. Cuando se te solicite los permisos de acceso al micrófono, selecciona Permitir.<br>
+                                    3. Puede comenzar a grabar.<br><br>
+                                    En caso que no se soliciten los permisos realice los siguientes pasos:<br>
+                                    1. En la esquina superior derecha de su navegador, haz clic en Más Más y, luego, Configuración.<br>
+                                    2. Haz clic en Privacidad y seguridad y, luego, Configuración de sitios y, luego, Cámara o Micrófono.<br>
+                                    3. Selecciona la opción que deseas como tu configuración predeterminada.
+                                    4. Revisa que esta página no esté en los sitios bloqueados.
+                                    Para quitar una excepción o un permiso existentes, a la derecha del sitio, haz clic en Borrar Borrar .
+                                    5. En la sección "No permitidos", selecciona el nombre del sitio y cambia el permiso de la cámara 
+                                    o el micrófono a "Permitir".
+                                    @break
+                                @case("pdf")
+                                    En esta actividad es necesario cargar un archivo PDF(Portable Document Format). Si ha creado la actividad
+                                    en Word puede guardar el archivo como PDF a través de la función "Imprimir" y luego "Imprimir como PDF"<br><br>
+                                    Puede convertir su documento de Word a través de un conversor gratuito en internet, como lo es por ejemplo
+                                    <a href="https://www.ilovepdf.com/es/word_a_pdf" target="_blank">I love PDF</a><br><br>
+                                    Si ha realizado su trabajo en algún servicio de la nube como Google Documents o One Drive, puede 
+                                    descargar una copia en PDF.
+                                    @break
+    
+                                @case("texto")
+                                    Esta actividad requiere que redacte en el campo de texto. Puede copiar y pegar de otro editor de texto
+                                    (Word, Google Documentews, etc). Recuerde que el sistema no guarda cambios parciales y al cerrar el navegador
+                                    sin realizar la entrega, pierde los avances realizados.
+                                    @break
+    
+                                @case("link")
+                                    Esta actividad requiere que pegue un link externo. Si se trata de un video de YouTube, tenga en cuenta pegar
+                                    la dirección del video como aparece en el navegador. Ejemplo: https://www.youtube.com/watch?v=VeHxgX67J3s
+                                    @break
+                                @default
+                                    
+                            @endswitch
+                        </div>
+                    </div>
+                    
+                </div>
+                <div class="card-footer text-center">
+                    <div class="d-grid gap-2">
+                      <button type="submit" class="btn btn-primary">REALIZAR ENTREGA</button>
+                    </div>
+                </div>
+            </div>
+            
+</form>
+@endsection
+
+
+@section('scripts')
+    <script src="{{ asset('js/ckeditor/ckeditor.js') }}"></script>
+    <script src="{{ asset('js/rcd/adapter-latest.js')}}"></script>
+    <script src="{{ asset('js/rcd/index.js')}}"></script>
+  <script>
+    
+    const recorder = new MicRecorder({
+      bitRate: 128
+    });
+
+    var recording = false;
+
+    $('.recMe').click(function(){
+        if(recording == false){
+            recorder.start().then(() => {
+                $(this).text('Detener grabación');
+                $(this).removeClass('btn-primary');
+                $(this).addClass('btn-danger');
+            }).catch((e) => {
+                console.error(e);
+            });
+            recording = true;
+        } else {
+            $(this).text('Intentar de nuevo');
+            $(this).removeClass('btn-danger');
+            $(this).addClass('btn-primary');
+            recording = false;
+            stopRecording();
+        }
+        
+    });
+    
+    function stopRecording() {
+      recorder.stop().getMp3().then(([buffer, blob]) => {
+        const file = new File(buffer, 'file.mp3', {
+          type: blob.type,
+          lastModified: Date.now()
+        });
+
+        //
+        var fileInput = document.getElementById('archivoAudio');
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        fileInput.files = dataTransfer.files;
+        //
+
+        $('#playlist').empty();
+
+        const li = document.createElement('div');
+        const player = new Audio(URL.createObjectURL(file));
+        player.controls = true;
+        li.appendChild(player);
+        document.querySelector('#playlist').appendChild(li);
+
+      }).catch((e) => {
+        console.error(e);
+      });
+    }
+
+  </script>
+@endsection

@@ -1,0 +1,378 @@
+@php 
+$sesionAhora = true;
+$autoeval = [];
+$guiaSeminar = 0;
+$obj = $obj ?? new stdClass();
+$dataMatriculaF = Auth::user()->misBoxMatriculas()->where('estado', 'ACTIVO')->orderBy('id', 'DESC')->first();
+$docReq = \AppHelper::checkDocsReqs(Auth::user());
+@endphp
+
+@extends('layouts.instel')
+
+@section('content')
+<div class="container">
+    @if (Session::exists('msjFinanciero'))
+        <div class="alert alert-danger">{!! Session::get('msjFinanciero')[0] !!}</div>
+    @endif
+    @if ($message = Session::get('success'))
+        <div class="alert alert-success">{{ $message }}</div>
+    @endif
+
+    @if (((Auth::user()->dataSiet()->first()->updated_at < '2023-05-15') || (Auth::user()->dataSiet()->first()->pais == NULL)) && Auth::user()->misSesiones()->count() == 0)
+        <!-- ALERTA SIET -->
+        <div class="container alert alert-danger" role="alert">
+            <h4 class="alert-heading">Tu información personal está desactualizada desde el <span class="forFecha" dt-fmt="0" dt-f="{{ Auth::user()->dataSiet()->first()->updated_at }}"></span></h4>
+            <p>
+                Para INSTEL es importante contar con tus datos personales actualizados. (Al menos de los últimos 3 meses)
+                Diligencia el formulario para el SIET <b><a href="/siet">haciendo clic aquí</a></b>.
+            </p>
+            <hr>
+            <p class="mb-0">Actualiza tus datos antes del 11 de Agosto de 2023 y evita que tu acceso a la plataforma sea bloqueada. <span class="countdown"></span>
+            </p>
+        </div>
+
+    @else
+
+    @include('user.agenda')
+
+    @if (count($docReq) > 0)
+
+    <div class="container alert alert-success" role="alert">
+        <h4 class="alert-heading">Debe cargar algunos documentos faltantes</h4>
+        <p>Para iniciar su proceso de formación con INSTEL es necesario que cargue los siguientes documentos faltantes:</p>
+        <ul>
+            @foreach ($docReq as $item)
+                <li>Debe cargar el documento {{ $item }} </li>
+            @endforeach
+        </ul>
+        <hr>
+        <p class="mb-0">Para cargarlos entre a <b><a href="/profile">su Perfil</a></b>, cargue los documentos y de clic en GUARDAR</p>
+    </div>
+
+    @else
+    
+    @if (Auth::user()->misSesiones()->count() > 0)
+    <!-- Sesiones de seminario -->
+    <div class="row" style="margin-top: 20px">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    Tienes <b>{{ Auth::user()->misSesiones()->count() }} Sesiones</b> de seminario por desarrollar
+                </div>
+                <div class="card-body row">
+
+                    @foreach (Auth::user()->misSesiones() as $item)
+                    @if ($guiaSeminar !== $item->dataSeminar()->programa()->id)
+                    @if (!$loop->first) </div></div> @endif 
+                    @php $sesionAhora = true @endphp
+                    <div class="col-md-4" style="background-repeat: no-repeat; background-position:top center; background-image: url(https://www.instel.edu.co/uploads/{{ $item->dataSeminar()->programa()->imageProfile }})">
+                        <div style="background-color: #bb2d3b; color:#FFF">SEMINARIO-TALLER</div>
+                        <div style="background-color: #FFF; font-size:30px; background-color: #FFFFFFC2; font-weight: 900; padding: 18px; text-transform:uppercase; line-height:30px; color: #00468C">
+                            {{ $item->dataSeminar()->programa()->nombre }}</div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="list-group">
+                            @endif
+                            @php
+                                $guiaSeminar = $item->dataSeminar()->programa()->id;
+                            @endphp
+                            <div class="list-group-item list-group-item-action @if($item->fecha < date('Y-m-d'))cardSeminarActive @endif" aria-current="true">
+                              <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">
+                                    @if($item->retro)<i class="fa-solid fa-circle-check"></i>@endif {{ $item->dataSeminar()->sesionID }}
+                                </h5>
+                                <small class="forFecha" dt-fmt="0" dt-f="{{ $item->fecha }}"></small>
+                              </div>
+                              <p class="mb-1">Docente: {{ $item->docente()->nombres.' '.$item->docente()->apellidos }}</p>
+                              
+                              <div class="d-flex flex-row-reverse">
+                                @if ($item->retro)
+                                <button onclick="verRetro(this)" type="button" data-rt="{{ $item->retro }}" data-de="{{ $item->docente()->nombres.' '.$item->docente()->apellidos }}" class="btn btn-sm col-md-3 btn-danger">
+                                    <i class="fa-solid fa-comment-dots"></i> Retroalimentación
+                                </button>
+                                @endif
+                              @if($item->fecha < date('Y-m-d'))
+                                @if ($item->repositorio != NULL)
+                                    <a href="https://drive.google.com/file/d/{{ $item->repositorio }}/view" target="_blank" class="col-6 col-md-3 btn btn-sm btn-outline-primary"><i class="fa-solid fa-clapperboard"></i> Video Clase</a>
+                                @endif
+                                @if ($item->dataSeminar()->tarea != NULL)
+                                    @if ($item->envio != NULL)
+                                    <a class="col-12 col-md-3 btn btn-sm btn-success"><i class="fa-solid fa-circle-check"></i> Entregada</a>
+                                    @else
+                                    <a href="{{ route('vertarea.seminario', $item->dataSeminar()->id) }}" class=" col-12 col-md-3 btn btn-sm btn-outline-success"><i class="fa-solid fa-thumbtack"></i> Actividad</a>
+                                    @endif
+                                @endif
+                            @else
+                            @if ($sesionAhora == true)
+                                @if ($item->zoom != NULL)
+                                    <a href="https://us02web.zoom.us/j/{{$item->zoom}}" class=" col-12 col-md-3 btn-sm btn btn-warning"><i class="fa-solid fa-chalkboard-user"></i> Sala Zoom</a>
+                                @endif
+                                @if (Storage::exists('userfiles/seminarios/'.$item->dataSeminar()->recurso.'.pdf'))
+                                    <a href="{{ route('ft','seminarios|'.$item->dataSeminar()->recurso.'.pdf')}}" target="_blank" class=" col-12 col-md-3 btn-sm btn btn-success"><i class="fa-regular fa-file-pdf"></i> Lectura</a>
+                                @endif
+                            @php $sesionAhora = false @endphp
+                            @endif
+                            @endif
+                              </div>
+
+
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Pruebas de Aptitud -->
+    @if (Auth::user()->getPruebas()->count() > 0)
+    <div class="row m-4" style="margin-top: 20px">
+        <h3 style="border-bottom: #00468C 1px solid">Resultados Pruebas de Aptitud</h3>
+        <div class="row">
+            @foreach (Auth::user()->getPruebas()  as $item)
+                <div class="col-md-3 text-center">
+                    <a href="{{ ($item->valoracion1 == NULL ? '#' : route('prueba.ver', $item->codigo)) }}" target="_blank">
+                        <div style="position: relative; display: inline-block;">
+                            <img src="{{ asset('images/portadas/papq-'.$item->idPrueba.'.jpg') }}" class="img-fluid">
+                            @if ($item->valoracion1 == NULL)
+                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(7, 28, 92, 0.9); opacity: 0.5; z-index: 1;"></div>
+                            <br>[ No Disponible ]
+                            @else
+                            {{ $item->laPrueba()->nombre }}
+                            @endif
+                        </div>
+                    </a>
+                    <br>
+                    @php
+                        $visibleDesde = \Carbon\Carbon::parse($item->laPrueba()->fecha1)->subDays(3);
+                        $visibleHasta = \Carbon\Carbon::parse($item->laPrueba()->fecha2);
+                    @endphp
+                    @if(!is_null($item->laPrueba()->anexo) && $visibleDesde < now() && $visibleHasta > now())
+                        <a href="{{ route('ft','pruebas|' . $item->laPrueba()->anexo)}}" target="_blank" class="btn btn-sm btn-primary mt-2">Documento Guía</a>
+                    @endif
+                </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+    
+
+    <!-- Modulos -->
+    @if ($misModulos !== [])
+        
+    <div class="row" style="margin-top: 20px">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    Tienes <b>{{ $misModulos->count() }} Módulos</b> por desarrollar
+                </div>
+                <div class="card-body row">
+                    @foreach ($misModulos as $item)
+                    @php
+                        $tiempos = AppHelper::timeModule($item->modulos_s, $dataMatriculaF->periodo);
+                        foreach ($tiempos as $key) {
+                            array_push($autoeval, [$item->modulos_s->titulo, $key[2], $item->modulos_s->id, 1]);
+                            array_push($autoeval, [$item->modulos_s->titulo, $key[1], $item->modulos_s->id, 2]);
+                        }
+                        //echo $tiempos[0][0]. '----'.$tiempos[0][1];
+                        $extraCss1 = '';
+                        $extraCss2 = '';
+                        $extraCss3 = '';
+                        if (now() >= $tiempos[0][0] && now() <= $tiempos[0][1]){
+                            $extraCss1 = ' style="border: 3px solid #f23838 !important;"';
+                            $extraCss2 = ' style="background-color: #f23838"';
+                            $extraCss3 = ' style="color: #FFF"';
+                        }
+                        $notaPromedio = number_format(($item->n1 * 0.3) + ($item->n2 * 0.3) + ($item->n3 * 0.4), 1, '.', '');
+                    @endphp
+                        <div class="col-md-4">
+                        <div class="productCardContainer h-100">
+                            <div class="productCardContent h-100" {!! $extraCss1 !!}>
+                            <div class="productCardImage">
+                                <img src="{{ route('ft','img|modulos|'.$item->modulos_s->image) }}" alt="" />
+                                <a href="{{ route('estudiante.md', $item->modulos_s->id) }}" class="imageCardEffect"></a>
+                            </div>
+                            <div class="productCardDetails">
+                                <div class="productCardModel" {!! $extraCss2 !!}>
+                                <span class="modelCardEffect"></span>
+                                <a {!! $extraCss3 !!} href="{{ route('estudiante.md', $item->modulos_s->id) }}">{{$item->modulos_s->titulo}}</a>
+                                </div>
+                                <div class="table-responsive-sm">
+                                    <table class="table table-light text-center" style="font-size: 12px">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">AU 1<br>(30%)</th>
+                                                <th scope="col">AU 2<br>(30%)</th>
+                                                <th scope="col">AU 3<br>(40%)</th>
+                                                <th scope="col">DEF<br>(100%)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="">
+                                                <td class="notaMod">{{ $item->n1 }}</td>
+                                                <td class="notaMod">{{ $item->n2 }}</td>
+                                                <td class="notaMod">{{ $item->n3 }}</td>
+                                                <td class="notaMod">{{ $notaPromedio }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="4">
+                                                    Asistencias: {{ Auth::user()->misAsistencias()->where('modulo',$item->modulos_s->id)->where('presencia',1)->count() }} de {{ Auth::user()->misAsistencias()->where('modulo',$item->modulos_s->id)->count() }}
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="productCardPrice">
+                                <a href="{{ route('estudiante.md', $item->modulos_s->id) }}" class="btn">
+                                    ENTRAR
+                                </a>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+    
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+
+
+    @if (isset($dataMatriculaF))
+    <div class="container" style="margin-top: 40px">
+        <div style="padding: 10px; background-color: #00468C; color: #FFF; font-size: 20px; font-weight: 900; text-transform: uppercase">
+            INFORMACIÓN GENERAL
+        </div>
+
+        @if ($dataMatriculaF->prg == 1 && $dataMatriculaF->periodo == "20232" && $dataMatriculaF->nivel == 1)
+        <!-- Auditorio para estudiantes de Primer Semestre -->
+        <div style="text-align:right">
+            <a class="btn btn-primary" href="https://us02web.zoom.us/j/81107044608" role="button">SALA APERTURA</a>
+        </div>
+        @endif
+
+        @if ($dataMatriculaF->prg == 17 || $dataMatriculaF->prg == 18)
+        <!-- Auditorio para estudiantes de Certificaciones -->
+        <div style="text-align:right">
+            <a class="btn btn-primary" href="https://us02web.zoom.us/j/83600610058" role="button">SALA APERTURA</a>
+        </div>
+        @endif
+
+        @if ($dataMatriculaF->nivel == 9)
+        <!-- Auditorio para estudiantes de Diplomado -->
+        <div style="text-align:right">
+            <a class="btn btn-primary" href="https://us02web.zoom.us/j/86138252334" role="button">AUDITORIO</a>
+        </div>
+        @endif
+
+        <div class="row">
+            <div class="col-md-3">
+                <h5 style="margin-top: 10px">Documentos de Consulta</h5>
+                <ul class="list-group">
+
+                @foreach ($infoGeneral as $item)
+                @if (str_contains($item->nombre, 'pdf'))
+                <li class="list-group-item">
+                    <a href="{{ route('ft', 'files|'.$item->ruta)}}" target="_blank">
+                        {{ explode('|', $item->nombre)[3]}}
+                    </a>
+                </li>                
+                @endif
+                @endforeach
+                </ul>
+
+            </div>
+            <div class="col-md-9">
+                <h5 style="margin-top: 10px">Repositorio de Videos</h5>
+                <div class="row">
+                @foreach ($infoGeneral as $item)
+                @if (str_contains($item->nombre, 'video'))
+                <div class="col-md-6">
+                    <iframe src="https://drive.google.com/file/d/{{$item->ruta}}/preview"
+                        width="100%" height="340" allow="autoplay"></iframe>
+                        {{ explode('|', $item->nombre)[3]}}
+                </div>
+                @endif
+                @endforeach
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+    
+@endif
+@endif
+    
+</div>
+
+
+
+<div class="modal fade" id="retroAl" tabindex="-1" role="dialog" aria-labelledby="retrBox" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+                <div class="modal-header">
+                        <h5 class="modal-title" id="retrBox">Retroalimentación de la sesión por parte del Docente</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+            <div class="modal-body">
+                <div class="container-fluid" id="retrTxt">
+                    
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@endsection
+
+
+@section('scripts')
+<script>
+    function verRetro(tt){
+        $('#retroAl').modal('show');
+        $('#retrTxt').text($(tt).attr('data-rt'))
+        $('#retrBox').text("Retroalimentación de " + $(tt).attr('data-de'))
+
+    }
+
+    $('.notaMod').each(function() {
+        var dtCom = parseFloat($(this).text());
+        if (dtCom == 0.0) {
+            $(this).css("background-color","transparent");
+        } else if (dtCom > 0.0 && dtCom < 3.5) {
+            $(this).css("background-color","#ffd9d6");
+        } else if (dtCom >= 3.5 && dtCom < 4.5) {
+            $(this).css("background-color","#f5f2dc");
+        } else if (dtCom >= 4.5) {
+            $(this).css("background-color","#e2f7df");
+        }
+    });
+
+   function openMsj(tt, deMsj){
+    var url = "vermsj/"+tt
+    $.get( url , function( data ) {
+        if(data == 0){
+            alert("Función no permitida")
+        } else {
+            $('#msjView').modal('show');
+            $('#t_msj').text(data.asunto);
+            $('#f_msj').text(data.start_date);
+            $('#m_msj').text(data.mensaje);
+            $('#dd_msj').text(data.updated_at);
+            $('#r_msj').text("Respuesta de " + deMsj);
+            $('#msjT').text(data.respuesta);
+            //
+        }
+    });
+   }
+
+</script>
+@endsection
