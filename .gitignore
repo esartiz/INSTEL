@@ -15,3 +15,4 @@ yarn-error.log
 /.idea
 /.vscode
 /app/Http/Controllers/Notpush.php
+resources/views/zoom

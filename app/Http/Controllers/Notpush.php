@@ -25,7 +25,6 @@ class Notpush extends Controller
 
         $FcmToken = User::where('id',$request->id)->pluck('fcm_token')->all();
 
-        $serverKey = 'AAAA-NwovU4:APA91bFV5ukdDdOA829noFuDIgecxyjnBBpEtTyOwIMWGU6nzLrP6rW3rQ5PC_rLlmfVT80Smo62l-xuaxFNmZeXIxOFYm-eqCxraTcqvV0w2BCo5bs5xzUQYdY_kb0i9TwYJJxEPlMy'; // ADD SERVER KEY HERE PROVIDED BY FCM
     
         $data = [
             "registration_ids" => $FcmToken,
@@ -66,7 +65,7 @@ class Notpush extends Controller
 
     public static function enviaNotificacion(int $destino, string $titulo, $msj, int $tipo) {
         $url = 'https://fcm.googleapis.com/fcm/send';
-        $serverKey = 'AAAA-NwovU4:APA91bFV5ukdDdOA829noFuDIgecxyjnBBpEtTyOwIMWGU6nzLrP6rW3rQ5PC_rLlmfVT80Smo62l-xuaxFNmZeXIxOFYm-eqCxraTcqvV0w2BCo5bs5xzUQYdY_kb0i9TwYJJxEPlMy';
+        $serverKey = '';
         
         //Tipo de envio
         switch($tipo){
